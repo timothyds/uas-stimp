@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, TextInput, Button, FlatList, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, Image, TextInput, Button, FlatList, StyleSheet, ScrollView } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -11,11 +11,11 @@ interface ComicPage {
 interface Comment {
     id: number;
     user: string;
-    text: string;
+    comment: string;
     created_at: string;
 }
-
 export default function ReadComic() {
+    const [triggerRefresh, setTriggerRefresh] = useState(false);
     const [comicId, setComicId] = useState<number | null>(null);
     const [comicPages, setComicPages] = useState<ComicPage[]>([]);
     const [comments, setComments] = useState<Comment[]>([]);
@@ -63,6 +63,7 @@ export default function ReadComic() {
                 // Jika data berhasil diambil, set data dalam comicPages
                 if (resjson.result === "success") {
                     setComicPages(resjson.data.pages); // Menyimpan data halaman komik langsung ke state
+                    setComments(resjson.data.comments);
                 } else {
                     console.error("Error fetching comic pages:", resjson.message);
                 }
@@ -74,7 +75,7 @@ export default function ReadComic() {
         if (comicId) {
             fetchComicPages(); // Panggil fungsi fetchComicPages
         }
-    }, [comicId]); // Fungsi akan dijalankan setiap kali comicId berubah
+    }, [comicId,triggerRefresh]); // Fungsi akan dijalankan setiap kali comicId berubah
 
     if (!comicId) {
         return (
@@ -90,10 +91,11 @@ export default function ReadComic() {
             const response = await fetch("https://ubaya.xyz/react/160421125/submit_rating.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: `comic_id=${comicId}&rating=${rating}&userId=${idUser}`,
+                body: `comic_id=${comicId}&rating=${rating}&user_id=${idUser}`,
             });
             const data = await response.json();
             if (data.result === "success") {
+                setTriggerRefresh(prev => !prev)
                 alert("Rating submitted!");
                 setRating(null);
             } else {
@@ -110,11 +112,11 @@ export default function ReadComic() {
             const response = await fetch("https://ubaya.xyz/react/160421125/submit_comment.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: `comic_id=${comicId}&comment=${encodeURIComponent(commentText)}`,
+                body: `comic_id=${comicId}&comment=${encodeURIComponent(commentText)}&user_id=${idUser}`,
             });
             const data = await response.json();
             if (data.result === "success") {
-                setComments((prev) => [...prev, data.data]);
+                setTriggerRefresh(prev => !prev)
                 setCommentText("");
             } else {
                 alert("Failed to submit comment: " + data.message);
@@ -125,7 +127,7 @@ export default function ReadComic() {
     };
 
     return (
-        <View style={styles.container}>
+        <ScrollView style={styles.container}>
             <FlatList
                 data={comicPages}
                 keyExtractor={(item) => item.page_number.toString()}
@@ -144,6 +146,17 @@ export default function ReadComic() {
                 />
                 <Button title="Submit Rating" onPress={handleRatingSubmit} />
             </View>
+            <Text style={styles.commentTitle}>Komentar</Text>
+            <FlatList
+                data={comments}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                    <View style={styles.commentCard}>
+                        <Text style={styles.commentText}>{item.comment}</Text>
+                        <Text style={styles.commentMeta}>{item.user}, {item.created_at}</Text>
+                    </View>
+                )}
+            />
             <TextInput
                 style={styles.commentInput}
                 placeholder="Add a comment..."
@@ -151,17 +164,8 @@ export default function ReadComic() {
                 onChangeText={setCommentText}
             />
             <Button title="Submit Comment" onPress={handleCommentSubmit} />
-            <FlatList
-                data={comments}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                    <View style={styles.commentCard}>
-                        <Text style={styles.commentText}>{item.text}</Text>
-                        <Text style={styles.commentMeta}>- {item.user}, {item.created_at}</Text>
-                    </View>
-                )}
-            />
-        </View>
+            
+        </ScrollView>
     );
 }
 
@@ -197,6 +201,13 @@ const styles = StyleSheet.create({
         padding: 10,
         marginBottom: 10,
     },
+    commentTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginVertical: 10,
+        color: '#333',
+    },
+    
     commentCard: {
         backgroundColor: "#f9f9f9",
         padding: 10,
