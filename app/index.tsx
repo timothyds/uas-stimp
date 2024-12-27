@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Text, View, StyleSheet, Button, FlatList, TouchableOpacity } from "react-native";
+import { Text, View, StyleSheet, Button, FlatList, TouchableOpacity, ImageBackground } from "react-native";
 import { useRouter } from 'expo-router';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "./authContext";
@@ -83,6 +83,11 @@ export default function Index() {
               style={styles.categoryItem}
               onPress={() => handleNavigate(item.id,item.name)}
             >
+              <ImageBackground
+                source={{ uri: item.image }}
+                style={styles.imageBackground}
+                resizeMode="cover"
+            ></ImageBackground>
               <Text style={styles.categoryText}>{item.name}</Text>
             </TouchableOpacity>
           )}
@@ -108,27 +113,28 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
   },
-  categoryButton: {
-    backgroundColor: "#007bff",
-    padding: 12,
-    borderRadius: 8,
-    marginVertical: 8,
-    width: "80%",
+  imageBackground: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-  },
+    opacity:0.5,
+    borderRadius:10
+},
   categoryText: {
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
     textAlign: "center",
+    backgroundColor: "rgba(161, 43, 151, 0.8)",
+    borderBottomRightRadius:10,
+    borderBottomLeftRadius:10
   },
   categoryItem: {
-    padding: 16,
+    width: 200,
+    height: 70,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    backgroundColor: "#3071a9",
+    borderRadius: 10,
+    overflow:"hidden"
   },
   logoutContainer: {
     marginTop: 20,
