@@ -1,5 +1,6 @@
 import { Stack, useRouter } from "expo-router";
-import { AuthProvider,useAuth } from "./authContext";
+import { AuthProvider, useAuth } from "./authContext";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useEffect } from "react";
 
 function RootLayout() {
@@ -18,16 +19,19 @@ function RootLayout() {
 
 
   return (
-  <Stack>
-    <Stack.Screen name="index" options={{ title: 'Kategori' }} />
+    <Stack>
+      <Stack.Screen name="index" options={{ title: 'Kategori' }} />
 
-  </Stack>
+    </Stack>
   );
 }
 export default function Layout() {
   return (
+
     <AuthProvider>
-      <RootLayout />
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <RootLayout />
+      </GestureHandlerRootView>
     </AuthProvider>
   );
 }

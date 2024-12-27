@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, TextInput, Button, FlatList, StyleSheet, ScrollView } from "react-native";
+import { View, Text, Image, TextInput, Button, FlatList, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Icon from "react-native-vector-icons/FontAwesome";
 
 interface ComicPage {
     page_number: number;
@@ -19,25 +20,25 @@ export default function ReadComic() {
     const [comicId, setComicId] = useState<number | null>(null);
     const [comicPages, setComicPages] = useState<ComicPage[]>([]);
     const [comments, setComments] = useState<Comment[]>([]);
-    const [rating, setRating] = useState<number | null>(null);
+    const [rating, setRating] = useState(0);
     const [commentText, setCommentText] = useState("");
     const [idUser, setIdUser] = useState<string | null>(null);
     const params = useLocalSearchParams();
 
     const getUserId = async () => {
         try {
-          const username = await AsyncStorage.getItem("username");
-          if (username !== null) {
-            setIdUser(username);  // Contoh: menyimpan id_user sebagai integer
-          }
+            const username = await AsyncStorage.getItem("username");
+            if (username !== null) {
+                setIdUser(username);  // Contoh: menyimpan id_user sebagai integer
+            }
         } catch (error) {
-          console.error("Failed to fetch user id from AsyncStorage", error);
+            console.error("Failed to fetch user id from AsyncStorage", error);
         }
-      };
-    
-      useEffect(() => {
+    };
+
+    useEffect(() => {
         getUserId();  // Panggil fungsi untuk mendapatkan id_user dari AsyncStorage
-      }, []);
+    }, []);
 
 
     useEffect(() => {
@@ -75,7 +76,8 @@ export default function ReadComic() {
         if (comicId) {
             fetchComicPages(); // Panggil fungsi fetchComicPages
         }
-    }, [comicId,triggerRefresh]); // Fungsi akan dijalankan setiap kali comicId berubah
+    }, [comicId, triggerRefresh]); // Fungsi akan dijalankan setiap kali comicId berubah
+
 
     if (!comicId) {
         return (
@@ -86,7 +88,10 @@ export default function ReadComic() {
     }
 
     const handleRatingSubmit = async () => {
-        if (!rating) return;
+        if (rating === 0) {
+            alert("Please select a rating!");
+            return;
+        }
         try {
             const response = await fetch("https://ubaya.xyz/react/160421125/submit_rating.php", {
                 method: "POST",
@@ -95,9 +100,8 @@ export default function ReadComic() {
             });
             const data = await response.json();
             if (data.result === "success") {
-                setTriggerRefresh(prev => !prev)
                 alert("Rating submitted!");
-                setRating(null);
+                setRating(0); // Reset rating setelah submit
             } else {
                 alert("Failed to submit rating: " + data.message);
             }
@@ -105,6 +109,27 @@ export default function ReadComic() {
             console.error("Failed to submit rating:", error);
         }
     };
+
+    // const handleRatingSubmit = async () => {
+    //     if (!rating) return;
+    //     try {
+    //         const response = await fetch("https://ubaya.xyz/react/160421125/submit_rating.php", {
+    //             method: "POST",
+    //             headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    //             body: `comic_id=${comicId}&rating=${rating}&user_id=${idUser}`,
+    //         });
+    //         const data = await response.json();
+    //         if (data.result === "success") {
+    //             setTriggerRefresh(prev => !prev)
+    //             alert("Rating submitted!");
+    //             setRating(null);
+    //         } else {
+    //             alert("Failed to submit rating: " + data.message);
+    //         }
+    //     } catch (error) {
+    //         console.error("Failed to submit rating:", error);
+    //     }
+    // };
 
     const handleCommentSubmit = async () => {
         if (!commentText) return;
@@ -127,25 +152,32 @@ export default function ReadComic() {
     };
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView nestedScrollEnabled={true} style={styles.container}>
             <FlatList
                 data={comicPages}
                 keyExtractor={(item) => item.page_number.toString()}
                 renderItem={({ item }) => (
-                    <Image source={{ uri: item.image_url }} style={styles.comicPage} />
+                    <Image source={{ uri: item.image_url }} style={styles.comicPage} resizeMode="contain"/>
                 )}
+                scrollEnabled={false}
             />
             <View style={styles.ratingContainer}>
-                <TextInput
-                    style={styles.ratingInput}
-                    keyboardType="number-pad"
-                    maxLength={1}
-                    placeholder="Rate (1-5)"
-                    value={rating?.toString() || ""}
-                    onChangeText={(text) => setRating(parseInt(text))}
-                />
-                <Button title="Submit Rating" onPress={handleRatingSubmit} />
+                <Text style={styles.ratingLabel}>Rate this comic:</Text>
+                <View style={styles.stars}>
+                    {[1, 2, 3, 4, 5].map((value) => (
+                        <TouchableOpacity key={value} onPress={() => setRating(value)}>
+                            <Icon
+                                name="star"
+                                size={30}
+                                color={value <= rating ? "#FFD700" : "#CCCCCC"} // Bintang yang dipilih berwarna emas
+                                style={styles.star}
+                            />
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
             </View>
+            <Button title="Submit Rating" onPress={handleRatingSubmit} />
             <Text style={styles.commentTitle}>Komentar</Text>
             <FlatList
                 data={comments}
@@ -156,6 +188,7 @@ export default function ReadComic() {
                         <Text style={styles.commentMeta}>{item.user}, {item.created_at}</Text>
                     </View>
                 )}
+                scrollEnabled={false}
             />
             <TextInput
                 style={styles.commentInput}
@@ -164,7 +197,6 @@ export default function ReadComic() {
                 onChangeText={setCommentText}
             />
             <Button title="Submit Comment" onPress={handleCommentSubmit} />
-            
         </ScrollView>
     );
 }
@@ -173,12 +205,12 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 10,
+        width: "100%",
         backgroundColor: "#fff",
     },
     comicPage: {
         width: "100%",
-        height: 400,
-        marginBottom: 10,
+        height: 500,
     },
     ratingContainer: {
         flexDirection: "row",
@@ -194,6 +226,17 @@ const styles = StyleSheet.create({
         width: 100,
         textAlign: "center",
     },
+    ratingLabel: {
+        fontSize: 18,
+        marginBottom: 10,
+    },
+    stars: {
+        flexDirection: "row",
+        marginBottom: 10,
+    },
+    star: {
+        marginHorizontal: 5,
+    },
     commentInput: {
         borderWidth: 1,
         borderColor: "#ccc",
@@ -207,7 +250,7 @@ const styles = StyleSheet.create({
         marginVertical: 10,
         color: '#333',
     },
-    
+
     commentCard: {
         backgroundColor: "#f9f9f9",
         padding: 10,
