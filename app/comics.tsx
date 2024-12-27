@@ -6,6 +6,7 @@ interface Comic {
   id: number;
   title: string;
   thumbnail: string; // URL atau path gambar poster
+  description: string;
   rating: number; // Rating rata-rata
 }
 
@@ -87,6 +88,7 @@ export default function Comics() {
             <View style={styles.info}>
               <Text style={styles.comicTitle}>{item.title}</Text>
               <Text style={styles.rating}>Rating: {item.rating}</Text>
+              <Text style={styles.rating}>Description: {item.description}</Text>
             </View>
           </TouchableOpacity>
         )}
