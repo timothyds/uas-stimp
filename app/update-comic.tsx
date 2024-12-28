@@ -129,7 +129,8 @@ export default function UpdateComic() {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 50 }} //biar ga kepotong bawahnya
+    keyboardShouldPersistTaps="handled">
       <TextInput
         style={styles.input}
         placeholder="Judul Komik"
@@ -206,7 +207,7 @@ export default function UpdateComic() {
           </View>
         ))}
       </ScrollView>
-      <Button title="Tambah Halaman" onPress={addPage} />
+      <Button title="Tambah Halaman" onPress={addPage}/>
       <Button title="Perbarui Komik" onPress={handleUpdate} />
     </ScrollView>
   );

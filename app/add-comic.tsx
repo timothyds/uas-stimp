@@ -133,7 +133,8 @@ export default function AddComic() {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container}  contentContainerStyle={{ paddingBottom: 50 }} //biar ga kepotong bawahnya
+    keyboardShouldPersistTaps="handled">
         <TextInput
           style={styles.input}
           placeholder="Judul Komik"
