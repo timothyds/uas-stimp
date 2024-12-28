@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity } from "react-native";
+import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, TextInput } from "react-native";
+import { Card } from "@rneui/base";
 import { useRouter, useLocalSearchParams } from "expo-router";
 
 interface Comic {
@@ -13,6 +14,7 @@ interface Comic {
 export default function Comics() {
   const [kategoriId, setKategoriId] = useState<number | null>(null);
   const [kategoriName, setKategoriName] = useState<string | null>(null);
+  const [cari, setCari] = useState<string | null>(null);
   const [comics, setComics] = useState<Comic[]>([]);
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -58,12 +60,45 @@ export default function Comics() {
     }
   }, [kategoriId]);
 
+  const fetchComics = async () => {
+    if (!kategoriId || !kategoriName) return; // Pastikan kategoriId dan kategoriName tersedia
+
+    const options = {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `id=${kategoriId}&name=${encodeURIComponent(kategoriName)}&cari=${cari}`, // Kirim ID dan nama kategori
+    };
+
+    try {
+      const response = await fetch(
+        "https://ubaya.xyz/react/160421125/get_comics.php",
+        options
+      );
+      const data = await response.json();
+      if (data.result === "success") {
+        setComics(data.data);
+      } else {
+        console.error("Error fetching comics:", data.message);
+      }
+    } catch (error) {
+      console.error("Failed to fetch comics:", error);
+    }
+  };
+
   const handleNavigate = (comicId: number, comicTitle: string) => {
     router.push({
       pathname: "/read-comic",
       params: { comicId, comicTitle },
     });
   };
+
+  const handleNavigateToUpdate = (comicId: number) => {
+    router.push({
+      pathname: "/update-comic",
+      params: { id: comicId }, // Kirim ID komik sebagai parameter
+    });
+  };
+  
 
   if (!kategoriId || !kategoriName) {
     return (
@@ -76,6 +111,15 @@ export default function Comics() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Daftar Komik - {kategoriName}</Text>
+      <Card>
+                <View>
+                    <Text>Cari </Text>
+                    <TextInput style={styles.input}   
+                    onChangeText={(cari) => setCari(cari)} 
+                    onSubmitEditing={() => fetchComics()} 
+                   />
+                </View>
+              </Card>
       <FlatList
         data={comics}
         keyExtractor={(item) => item.id.toString()}
@@ -89,6 +133,13 @@ export default function Comics() {
               <Text style={styles.comicTitle}>{item.title}</Text>
               <Text style={styles.rating}>Rating: {item.rating}</Text>
               <Text style={styles.rating}>Description: {item.description}</Text>
+
+              <TouchableOpacity
+            style={styles.updateButton}
+            onPress={() => handleNavigateToUpdate(item.id)}
+          >
+            <Text style={styles.updateButtonText}>Update Comic</Text>
+          </TouchableOpacity>
             </View>
           </TouchableOpacity>
         )}
@@ -134,5 +185,24 @@ const styles = StyleSheet.create({
   rating: {
     marginTop: 5,
     color: "#888",
+  },
+  updateButton: {
+    backgroundColor: '#4caf50',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  updateButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  input: {
+    height: 40,
+    width:200,
+    borderWidth: 1,
+    padding: 10,
   },
 });
