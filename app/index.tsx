@@ -3,6 +3,7 @@ import { Text, View, StyleSheet, Button, FlatList, TouchableOpacity, ImageBackgr
 import { useRouter } from 'expo-router';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "./authContext";
+import { useNavigation } from '@react-navigation/native';
 
 export default function Index() {
   const router = useRouter();
@@ -68,6 +69,12 @@ export default function Index() {
     });
   };
 
+  const handleNavigateAddComic = () => {
+    router.push({
+      pathname: "/add-comic"
+    });
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Halo, {username}! Pilih Kategori Komik:</Text>
@@ -93,6 +100,10 @@ export default function Index() {
           )}
         />
       )}
+      <Button
+        title="Tambah Komik"
+        onPress={() => handleNavigateAddComic()}
+      />
       <View style={styles.logoutContainer}>
         <Button title="Logout" onPress={doLogout} color="#d9534f" />
       </View>
